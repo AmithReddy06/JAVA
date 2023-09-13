@@ -1,0 +1,166 @@
+import java.util.LinkedList;
+import java.util.Queue;
+
+class Buffer {
+    private Queue<Integer> buffer = new LinkedList<>();
+    private int capacity;
+
+    public Buffer(int capacity) {
+        this.capacity = capacity;
+    }
+
+    public synchronized void produce(int item) throws InterruptedException {
+        while (buffer.size() == capacity) {
+            wait(); // Wait if buffer is full
+        }
+        buffer.offer(item);
+        System.out.println("Producing: " + item);
+        notifyAll(); // Notify consumers that an item is available
+    }
+
+    public synchronized int consume() throws InterruptedException {
+        while (buffer.isEmpty()) {
+            wait(); // Wait if buffer is empty
+        }
+        int item = buffer.poll();
+        System.out.println("Consuming: " + item);
+        notifyAll(); // Notify producers that space is available
+        return item;
+    }
+}
+
+class Producer implements Runnable {
+    private Buffer buffer;
+
+    public Producer(Buffer buffer) {
+        this.buffer = buffer;
+    }
+
+    @Override
+    public void run() {
+        try {
+            for (int i = 0; i < 10; i++) {
+                buffer.produce(i);
+                Thread.sleep(100); // Simulate some processing time
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+
+class Consumer implements Runnable {
+    private Buffer buffer;
+
+    public Consumer(Buffer buffer) {
+        this.buffer = buffer;
+    }
+
+    @Override
+    public void run() {
+        try {
+            for (int i = 0; i < 10; i++) {
+                buffer.consume();
+                Thread.sleep(200); // Simulate some processing time
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+
+public class SimpleProducerConsumerDemo {
+    public static void main(String[] args) {
+        Buffer buffer = new Buffer(5);
+
+        Thread producerThread = new Thread(new Producer(buffer));
+        Thread consumerThread = new Thread(new Consumer(buffer));
+
+        producerThread.start();
+        consumerThread.start();
+    }
+}
+
+
+
+
+
+
+
+
+
+// import java.util.LinkedList;
+// import java.util.Queue;
+
+// public class SimpleProducerConsumerDemo {
+
+//     public static final int BUFFER_SIZE = 5;
+//     public static final int MAX_ITEMS = 20;
+
+//     private static final Queue<Integer> buffer = new LinkedList<>();
+//     private static int itemCount = 0;
+
+//     public static class Producer implements Runnable {
+//         @Override
+//         public void run() {
+//             while (true) {
+//                 synchronized (buffer) {
+//                     while (buffer.size() == BUFFER_SIZE) {
+//                         try {
+//                             buffer.wait();
+//                         } catch (InterruptedException e) {
+//                             Thread.currentThread().interrupt();
+//                         }
+//                     }
+//                     int item = itemCount++;
+//                     buffer.add(item);
+//                     System.out.println("Produced: " + item);
+//                     buffer.notifyAll();
+//                     if (item == MAX_ITEMS) {
+//                         break;
+//                     }
+//                 }
+//             }
+//         }
+//     }
+
+//     public static class Consumer implements Runnable {
+//         @Override
+//         public void run() {
+//             while (true) {
+//                 synchronized (buffer) {
+//                     while (buffer.isEmpty()) {
+//                         try {
+//                             buffer.wait();
+//                         } catch (InterruptedException e) {
+//                             Thread.currentThread().interrupt();
+//                         }
+//                     }
+//                     int item = buffer.poll();
+//                     System.out.println("Consumed: " + item);
+//                     buffer.notifyAll();
+//                     if (item == MAX_ITEMS) {
+//                         break;
+//                     }
+//                 }
+//             }
+//         }
+//     }
+
+//     public static void main(String[] args) {
+//         Thread producerThread = new Thread(new Producer());
+//         Thread consumerThread = new Thread(new Consumer());
+
+//         producerThread.start();
+//         consumerThread.start();
+
+//         try {
+//             producerThread.join();
+//             consumerThread.join();
+//         } catch (InterruptedException e) {
+//             Thread.currentThread().interrupt();
+//         }
+//     }
+// }
+
+
